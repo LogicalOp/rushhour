@@ -2,11 +2,8 @@ import { useState } from 'react'
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import CssBaseline from '@mui/material/CssBaseline'
-import { Button, Stack } from '@mui/material/';
 import Header from './components/Header';
 import Home from './pages/Home';
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
 import './App.css'
 
 const dark = createTheme({
