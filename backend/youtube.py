@@ -37,7 +37,7 @@ def find_youtube_match(song_name: str, artist_name: str, target_duration: int):
 def download_audio(video_url: str, title: str, artist: str):
     ydl_opts = {
         'format': 'bestaudio/best',
-        'ffmpeg_location': 'C:/Users/dylan/AppData/Local/Microsoft/WinGet/Links/ffmpeg.exe',
+        'ffmpeg_location': '/usr/local/home/u200298/miniconda3/bin/ffmpeg',
         'postprocessors': [{
             'key': 'FFmpegExtractAudio',
             'preferredcodec': 'mp3',
