@@ -1,39 +1,36 @@
-import { useState } from 'react'
 import { createTheme, ThemeProvider } from '@mui/material/styles';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import CssBaseline from '@mui/material/CssBaseline'
-import Header from './components/Header';
-import Home from './pages/Home';
-import './App.css'
-
-const dark = createTheme({
+import NavBar from './components/NavBar';
+const style = createTheme({
   palette: {
-    mode: 'dark',
+    mode: 'light',
     primary: {
-      main: '#ed4b82',
+      main: '#863fb5',
+      light: '#faf2ff',
+      dark: '#4a335a',
+      contrastText: '#ffffff',
     },
     secondary: {
-      main: '#18181c',
+      main: '#f50057',
+    },
+    background: {
+      paper: '#b32dac',
+    },
+    text: {
+      primary: 'rgba(243,239,239,0.87)',
+      secondary: 'rgba(249,244,244,0.6)',
+      hint: '#ffffff',
     },
   },
 });
 
-function App() {
-  const [count, setCount] = useState(0)
 
+function App() {
   return (
-    <>
-      <ThemeProvider theme={dark}>
-        <CssBaseline />
-        <Header />
-        <Router>
-          <Routes>
-              <Route path='/' element={<Home />} />
-          </Routes>
-        </Router>
-      </ThemeProvider>
-    </>
-  )
+    <ThemeProvider theme={style}>
+          <NavBar />  
+    </ThemeProvider>
+   
+  );
 }
 
-export default App
+export default App;
