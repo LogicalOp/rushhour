@@ -1,7 +1,6 @@
-from fastapi import FastAPI
-from typing import Optional
-from liblrc import get_lyrics
-from utils import get_song
+from fastapi import FastAPI, HTTPException
+from fastapi.responses import FileResponse
+from utils import get_song_details
 
 app = FastAPI()
 
@@ -9,21 +8,11 @@ app = FastAPI()
 async def root():
     return {"message": "Hello World"}
 
-@app.get("/lrclib/")
-async def lyrics(track_name: str, artist_name: str, album_name: Optional[str] = None, duration: Optional[int] = None):
-    result = get_lyrics(track_name, artist_name, album_name, duration)
-    if result:
-        return result
-    else:
-        return {"error": "Lyrics not found"}
-    
 @app.get("/song/")
 async def song(song_name: str, artist_name: str):
-    result = get_song(song_name, artist_name)
-    if result:
-        return result
-    else:
-        return {"error": "Song not found"}
-
+    result = get_song_details(song_name, artist_name)
+    if "error" in result:
+        raise HTTPException(status_code=404, detail=result["error"])
     
-
+    file_path = result["video_file"]
+    return FileResponse(file_path, media_type='video/mp4', filename=f"{song_name} - {artist_name}.mp4")

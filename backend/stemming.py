@@ -1,52 +1,63 @@
-from demucs import pretrained
-from demucs.apply import apply_model
-from typing import Optional
-from pathlib import Path
 import torch
 import torchaudio
+import logging
+from fastapi import HTTPException
+from demucs import pretrained
+from demucs.apply import apply_model
+from pathlib import Path
 
-base_dir = Path(r"D:\Music\Data")
-vocals_dir = base_dir / "Vocals"
-instrumental_dir = base_dir / "Instrumental"
-original_dir = base_dir / "Original"
-karaoke_dir = base_dir / "Karaoke"
-
-vocals_dir.mkdir(parents=True, exist_ok=True)
-instrumental_dir.mkdir(parents=True, exist_ok=True)
-original_dir.mkdir(parents=True, exist_ok=True)
-karaoke_dir.mkdir(parents=True, exist_ok=True)
-
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-demucs_model = pretrained.get_model('mdx_extra').to(device)
-
-
-def separate_and_save(input_file_path: Path, base_name: str):
-    vocals_output_path = vocals_dir / f"{base_name}.wav"
-    instrumental_output_path = instrumental_dir / f"{base_name}.wav"
+def separate_and_save(input_file: str, output_prefix: str):
+    logging.info("Starting separate_and_save")
+    
+    input_file_path = Path(input_file)
+    vocals_output_path = Path(f"{output_prefix}_vocals.wav")
+    instrumental_output_path = Path(f"{output_prefix}_instrumental.wav")
 
     if vocals_output_path.exists() and instrumental_output_path.exists():
-        return vocals_output_path.name, instrumental_output_path.name
+        logging.info("Separated files already exist, returning cached paths")
+        return str(vocals_output_path), str(instrumental_output_path)
 
-    audio, sample_rate = torchaudio.load(str(input_file_path))
+    if not input_file_path.exists():
+        raise HTTPException(status_code=404, detail="Audio file not found after download.")
+    
+    try:
+        logging.info(f"Loading audio file: {input_file_path}")
+        audio, sample_rate = torchaudio.load(str(input_file_path))
+    except RuntimeError as e:
+        raise HTTPException(status_code=500, detail=f"Failed to load audio file: {e}")
+
     if audio.shape[0] == 1:
+        logging.info("Duplicating mono channel to stereo")
         audio = torch.cat([audio, audio])
 
     if sample_rate != 44100:
+        logging.info(f"Resampling audio from {sample_rate} to 44100 Hz")
         resample_transform = torchaudio.transforms.Resample(orig_freq=sample_rate, new_freq=44100)
         audio = resample_transform(audio)
+        sample_rate = 44100
 
-    audio = audio.to(device).unsqueeze(0)
+    audio = audio.unsqueeze(0)
+    logging.info("Added batch dimension to audio")
 
-    with torch.no_grad():
-        estimates = apply_model(demucs_model, audio, overlap=0.25)
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    audio = audio.to(device)
+    demucs_model = pretrained.get_model('mdx').to(device)
 
-    vocals = estimates[0][3].to("cpu")
-    instrumental = (estimates[0][0] + estimates[0][1] + estimates[0][2]).to("cpu")
+    try:
+        logging.info("Applying Demucs model to separate sources")
+        with torch.no_grad():
+            estimates = apply_model(demucs_model, audio, overlap=0.25)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Model application failed: {e}")
 
-    torchaudio.save(str(vocals_output_path), vocals, 44100)
-    torchaudio.save(str(instrumental_output_path), instrumental, 44100)
+    vocals = estimates[0][3].cpu()
+    instrumental = (estimates[0][0] + estimates[0][1] + estimates[0][2]).cpu()
 
-    return vocals_output_path.name, instrumental_output_path.name
+    logging.info(f"Saving vocals to: {vocals_output_path}")
+    torchaudio.save(str(vocals_output_path), vocals, sample_rate)
+    
+    logging.info(f"Saving instrumental to: {instrumental_output_path}")
+    torchaudio.save(str(instrumental_output_path), instrumental, sample_rate)
 
-
-separate_and_save("/usr/local/home/u200298/Downloads/rushhour/backend/downloads/A Bar Song (Tipsy) - Shaboozey.mp3", "Eoin")
+    logging.info("Finished separate_and_save")
+    return str(vocals_output_path), str(instrumental_output_path)
