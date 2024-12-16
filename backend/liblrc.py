@@ -4,16 +4,13 @@ import os
 
 root_url = 'https://lrclib.net/api/'
 
-# Function to get lyric files from the LRCLib API
-def get_lyrics(track_name: str, artist_name: str, album_name: Optional[str] = None, duration: Optional[int] = None) -> Optional[str]:
-    # Create the lrc folder if it doesn't exist
+async def get_lyrics(track_name: str, artist_name: str, album_name: Optional[str] = None, duration: Optional[int] = None) -> Optional[str]:
+
     if not os.path.exists('lrc'):
         os.makedirs('lrc')
-    
-    # Generate the filename
+
     filename = os.path.join('lrc', f"{track_name} - {artist_name}.lrc")
-    
-    # Check if the file already exists
+
     if os.path.exists(filename):
         print(f"File {filename} already exists")
         with open(filename, 'r', encoding='utf-8') as file:
@@ -41,8 +38,7 @@ def get_lyrics(track_name: str, artist_name: str, album_name: Optional[str] = No
             "duration": data.get('duration'),
             "lrc": data.get('syncedLyrics')
         }
-        
-        # Save the lyrics to the file in the lrc directory
+
         formatted_lyrics = filtered_data['lrc'].replace('\\n', '\n')
         with open(filename, 'w', encoding='utf-8') as file:
             file.write(formatted_lyrics)

@@ -6,7 +6,7 @@ from demucs import pretrained
 from demucs.apply import apply_model
 from pathlib import Path
 
-def separate_and_save(input_file: str, output_prefix: str):
+async def separate_and_save(input_file: str, output_prefix: str):
     logging.info("Starting separate_and_save")
     
     input_file_path = Path(input_file)

@@ -7,18 +7,20 @@ import time
 import os
 import subprocess
 
-def parse_lrc(path):
+
+
+async def parse_lrc(path):
     logging.info(f"Reading LRC file: {path}")
     with open(path, 'r', encoding='utf-8') as file:
         content = file.read()
 
-    # Split the content into individual lines
-    lines = content.split("\\n")
+    content = content.encode('utf-8').decode('unicode_escape')
+
+    lines = content.split("\n")
 
     lyrics = []
 
     for line in lines:
-        # Clean up the line by removing unnecessary escape characters and quotes
         line = line.replace("\\", "").replace("\"", "").strip()
         match = re.match(r'\[(\d+):(\d+\.\d+)\](.*)', line)
         if match:
@@ -32,11 +34,37 @@ def parse_lrc(path):
     logging.info(f"Parsed {len(lyrics)} lines of lyrics")
     return lyrics
 
-def create_image(lyric, font, max_width=1280):
-    img = Image.new('RGB', (1280, 720), color='black')  # Reduced resolution
+async def create_image(lyric, font):
+
+    width, height = 1280, 720
+    img = Image.new('RGB', (width, height))
     draw = ImageDraw.Draw(img)
+
+
+    colors = [
+        (35, 21, 87),  # #231557
+        (68, 16, 122),  # #44107A
+        (255, 19, 97),  # #FF1361
+        (255, 248, 0)   # #FFF800
+    ]
+
+
+    for y in range(height):
+        ratio = y / height
+        if ratio < 0.29:
+            r = int(colors[0][0] + (colors[1][0] - colors[0][0]) * (ratio / 0.29))
+            g = int(colors[0][1] + (colors[1][1] - colors[0][1]) * (ratio / 0.29))
+            b = int(colors[0][2] + (colors[1][2] - colors[0][2]) * (ratio / 0.29))
+        elif ratio < 0.67:
+            r = int(colors[1][0] + (colors[2][0] - colors[1][0]) * ((ratio - 0.29) / 0.38))
+            g = int(colors[1][1] + (colors[2][1] - colors[1][1]) * ((ratio - 0.29) / 0.38))
+            b = int(colors[1][2] + (colors[2][2] - colors[1][2]) * ((ratio - 0.29) / 0.38))
+        else:
+            r = int(colors[2][0] + (colors[3][0] - colors[2][0]) * ((ratio - 0.67) / 0.33))
+            g = int(colors[2][1] + (colors[3][1] - colors[2][1]) * ((ratio - 0.67) / 0.33))
+            b = int(colors[2][2] + (colors[3][2] - colors[2][2]) * ((ratio - 0.67) / 0.33))
+        draw.line([(0, y), (width, y)], fill=(r, g, b))
     
-    # Split the lyric into multiple lines if it exceeds the max width
     lines = []
     words = lyric.split()
     current_line = ""
@@ -44,7 +72,7 @@ def create_image(lyric, font, max_width=1280):
         test_line = current_line + " " + word if current_line else word
         text_bbox = draw.textbbox((0, 0), test_line, font=font)
         text_width = text_bbox[2] - text_bbox[0]
-        if text_width <= max_width:
+        if text_width <= width:
             current_line = test_line
         else:
             lines.append(current_line)
@@ -52,11 +80,9 @@ def create_image(lyric, font, max_width=1280):
     if current_line:
         lines.append(current_line)
 
-    # Calculate the total height of the text
     total_height = sum(draw.textbbox((0, 0), line, font=font)[3] - draw.textbbox((0, 0), line, font=font)[1] for line in lines)
     y_offset = (720 - total_height) // 2
 
-    # Draw each line of text
     for line in lines:
         text_bbox = draw.textbbox((0, 0), line, font=font)
         text_width = text_bbox[2] - text_bbox[0]
@@ -66,63 +92,51 @@ def create_image(lyric, font, max_width=1280):
 
     return np.array(img)
 
-def create_video(lrc_file, instrumental_file_path, output_file, wait_time=1):
+async def create_video(lrc_file, instrumental_file_path, output_file, wait_time=1):
     logging.info("Starting create_video_with_lyrics_and_instrumental")
-    lyrics = parse_lrc(lrc_file)
+    lyrics = await parse_lrc(lrc_file)  
     logging.info(f"Parsed {len(lyrics)} lines of lyrics")
 
-    # Load the font once
     try:
         font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 80)
     except IOError:
         font = ImageFont.load_default()
 
-    # Create a dictionary to store images for each unique lyric
     lyric_images = {}
 
-    # Create a list to store video segments
     video_segments = []
 
-    # Add a blank screen from 0 until the first timestamp
     if lyrics:
         first_timestamp = lyrics[0][0]
-        blank_clip = ColorClip(size=(1280, 720), color=(0, 0, 0), duration=first_timestamp)
+        blank_clip = ImageClip(await create_image("",font)).set_duration(first_timestamp)
         video_segments.append(blank_clip)
         logging.info(f"Added blank screen for {first_timestamp}s")
 
-    # Create a video clip for each line of lyrics
     for i, (timestamp, lyric) in enumerate(lyrics):
         logging.info(f"Creating video clip for lyric: {lyric} at {timestamp}s")
         
-        # Check if the image for this lyric already exists
         if lyric not in lyric_images:
-            lyric_images[lyric] = create_image(lyric, font)
+            lyric_images[lyric] = await create_image(lyric, font)
         
-        # Calculate the duration for this clip
         duration = lyrics[i + 1][0] - timestamp if i + 1 < len(lyrics) else 5
         logging.info(f"Duration for lyric '{lyric}': {duration}s")
 
-        # Create a video segment for this lyric
         img_array = lyric_images[lyric]
         img_clip = ImageClip(img_array).set_duration(duration).set_start(timestamp)
         video_segments.append(img_clip)
 
-    # Concatenate the video segments
     video = concatenate_videoclips(video_segments, method="compose")
 
-    # Write the video file without audio
     temp_video_file = output_file.replace(".mp4", "_temp.mp4")
     video.write_videofile(temp_video_file, fps=24)
 
     logging.info("Finished render_video_without_audio")
 
-    # Wait for the instrumental file to be available
     logging.info(f"Waiting for instrumental file: {instrumental_file_path}")
     while not os.path.exists(instrumental_file_path):
         logging.info(f"Instrumental file not found, waiting for {wait_time} seconds...")
         time.sleep(wait_time)
 
-    # Use ffmpeg to add the audio to the video
     logging.info("Adding audio to video using ffmpeg")
     command = [
         "ffmpeg",
@@ -134,12 +148,11 @@ def create_video(lrc_file, instrumental_file_path, output_file, wait_time=1):
         "-map", "0:v:0",
         "-map", "1:a:0",
         "-shortest",
-        "-y",  # Overwrite output file if it exists
+        "-y",  
         output_file
     ]
     subprocess.run(command, check=True)
 
-    # Remove the temporary video file
     os.remove(temp_video_file)
 
     logging.info("Finished create_video_with_lyrics_and_instrumental")

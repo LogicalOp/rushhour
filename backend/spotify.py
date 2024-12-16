@@ -5,7 +5,7 @@ from typing import Optional
 client_id = '85ffb4098ca344518417ce90e4b5cce8'
 client_secret = '5dd0542356524a87b6827ae1d90d6704'
 
-def get_spotify_token(client_id: str, client_secret: str) -> Optional[str]:
+async def get_spotify_token(client_id: str, client_secret: str) -> Optional[str]:
     url = 'https://accounts.spotify.com/api/token'
     headers = {
         'Authorization': 'Basic ' + base64.b64encode(f'{client_id}:{client_secret}'.encode()).decode()
@@ -24,11 +24,10 @@ def get_spotify_token(client_id: str, client_secret: str) -> Optional[str]:
         print(response.json())
         return None
 
-# Get token
+
 token = get_spotify_token(client_id, client_secret)
 
-# Search Track by Name and Artist
-def search_track(track_name: str, artist_name: str, token: str) -> Optional[dict]:
+async def search_track(track_name: str, artist_name: str, token: str) -> Optional[dict]:
     query = f'{artist_name} {track_name}'.replace(' ', '+')
     url = f'https://api.spotify.com/v1/search?q={query}&type=track'
     headers = { 'Authorization': f'Bearer {token}' }
@@ -56,8 +55,8 @@ def search_track(track_name: str, artist_name: str, token: str) -> Optional[dict
         print(response.json())
         return None
 
-# Get track from ID
-def get_track_from_id(track_id: str, token: str) -> Optional[dict]:
+
+async def get_track_from_id(track_id: str, token: str) -> Optional[dict]:
     url = f'https://api.spotify.com/v1/tracks/{track_id}'
     headers = { 'Authorization': f'Bearer {token}' }
 

@@ -3,7 +3,7 @@ from typing import Optional
 import os
 import time
 
-def find_youtube_match(song_name: str, artist_name: str, target_duration: int):
+async def find_youtube_match(song_name: str, artist_name: str, target_duration: int):
     start_time = time.time()
     query = f"{song_name} {artist_name}"
     cookies_file = 'cookies.txt'
@@ -15,7 +15,7 @@ def find_youtube_match(song_name: str, artist_name: str, target_duration: int):
     ydl_opts = {
         'quiet': True,
         'format': 'bestaudio',
-        'default_search': 'ytsearch5',  # Reduced number of search results
+        'default_search': 'ytsearch5',  
         'noplaylist': True,
         'cookiefile': cookies_file,
         'age_limit': 17
@@ -45,7 +45,7 @@ def find_youtube_match(song_name: str, artist_name: str, target_duration: int):
     print(f"Total time: {time.time() - start_time:.2f} seconds")
     return best_match
 
-def download_audio(video_url: str, title: str, artist: str):
+async def download_audio(video_url: str, title: str, artist: str):
     cookies_file = 'cookies.txt'
     
     # Check if the cookies file exists

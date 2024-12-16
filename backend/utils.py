@@ -1,18 +1,20 @@
+import csv
+import os
+import json
+import logging
+from datetime import datetime, timedelta
 from spotify import search_track, get_spotify_token
 from youtube import find_youtube_match, download_audio
 from liblrc import get_lyrics
 from video import create_video
 from stemming import separate_and_save
-import os
-import json
-import logging
-from concurrent.futures import ThreadPoolExecutor, as_completed
-from datetime import datetime, timedelta
+import aiofiles
+import asyncio
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 
-def delete_old_videos(directory: str, age_minutes: int):
+async def delete_old_videos(directory: str, age_minutes: int):
     now = datetime.now()
     cutoff = now - timedelta(minutes=age_minutes)
 
@@ -24,7 +26,30 @@ def delete_old_videos(directory: str, age_minutes: int):
                 logging.info(f"Deleting old video file: {file_path}")
                 os.remove(file_path)
 
-def get_song_details(song_name: str, artist_name: str):
+async def log_download(song_name: str, artist_name: str):
+    async with aiofiles.open('download_counts.csv', mode='a', newline='') as file:
+        writer = csv.writer(file)
+        await writer.writerow([song_name, artist_name])
+
+async def get_download_counts():
+    download_counts = {}
+    if not os.path.exists('download_counts.csv'):
+        return download_counts
+
+    async with aiofiles.open('download_counts.csv', mode='r') as file:
+        content = await file.read()
+        reader = csv.reader(content.splitlines())
+        for row in reader:
+            song_name, artist_name = row
+            key = f"{song_name} - {artist_name}"
+            if key in download_counts:
+                download_counts[key] += 1
+            else:
+                download_counts[key] = 1
+
+    return download_counts
+
+async def get_song_details(song_name: str, artist_name: str):
     logging.info("Starting get_song_details")
     
     if not os.path.exists('downloads'):
@@ -35,20 +60,19 @@ def get_song_details(song_name: str, artist_name: str):
         os.makedirs('videos')
 
     # Delete old videos
-    delete_old_videos('videos', 10)
+    await delete_old_videos('videos', 10)
 
     client_id = '85ffb4098ca344518417ce90e4b5cce8'
     client_secret = '5dd0542356524a87b6827ae1d90d6704'
 
     logging.info("Getting Spotify token")
-    token = get_spotify_token(client_id, client_secret)
-    
+    token = await get_spotify_token(client_id, client_secret)
     if not token:
         logging.error("Failed to get Spotify token")
         return {"error": "Failed to get Spotify token"}
 
     logging.info("Searching for track on Spotify")
-    spotify_track = search_track(song_name, artist_name, token)
+    spotify_track = await search_track(song_name, artist_name, token)
     if not spotify_track:
         logging.error("Spotify track not found")
         return {"error": "Spotify track not found"}
@@ -64,50 +88,52 @@ def get_song_details(song_name: str, artist_name: str):
 
     if os.path.exists(lrc_file) and os.path.exists(video_filename):
         logging.info("Files already exist, reading from cache")
+        await log_download(spotify_name, spotify_artist)
         return {
             "video_file": video_filename
         }
 
     logging.info("Finding YouTube match")
-    youtube_match = find_youtube_match(spotify_name, spotify_artist, spotify_duration)
+    youtube_match = await find_youtube_match(spotify_name, spotify_artist, spotify_duration)
     if not youtube_match:
         logging.error("YouTube match not found")
         return {"error": "YouTube match not found"}
 
     logging.info("Downloading audio from YouTube")
-    download_audio(youtube_match['webpage_url'], spotify_name, spotify_artist)
+    await download_audio(youtube_match['webpage_url'], spotify_name, spotify_artist)
 
     logging.info("Getting lyrics")
-    lyrics = get_lyrics(spotify_name, spotify_artist)
+    lyrics = await get_lyrics(spotify_name, spotify_artist)
     if not lyrics:
         logging.error("Lyrics not found")
         return {"error": "Lyrics not found"}
 
-    with open(lrc_file, 'w', encoding='utf-8') as file:
-        file.write(json.dumps(lyrics, indent=4, sort_keys=True))
+    async with aiofiles.open(lrc_file, 'w', encoding='utf-8') as file:
+        await file.write(json.dumps(lyrics, indent=4, sort_keys=True))
 
-    with ThreadPoolExecutor() as executor:
-        futures = {
-            executor.submit(create_video, lrc_file, instrumental_filename, video_filename): "video",
-            executor.submit(separate_and_save, audio_filename, f"{spotify_name} - {spotify_artist}"): "audio"
-        }
-
-        for future in as_completed(futures):
-            task = futures[future]
-            if task == "video":
-                logging.info("Video rendering without audio completed")
-            elif task == "audio":
-                vocals_file, instrumental_file = future.result()
-                logging.info("Audio separation completed")
+    logging.info("Creating video and separating audio")
+    try:
+        video_task = create_video(lrc_file, instrumental_filename, video_filename)
+        separate_task = separate_and_save(audio_filename, f"{spotify_name} - {spotify_artist}")
+        vocals_file, instrumental_file = await separate_task
+        await video_task
+    except Exception as e:
+        logging.error(f"Error during video creation or audio separation: {e}")
+        return {"error": str(e)}
 
     # Delete intermediate files
     logging.info("Deleting intermediate files")
-    os.remove(lrc_file)
-    os.remove(vocals_file)
-    os.remove(instrumental_file)
-    os.remove(audio_filename)
+    if os.path.exists(lrc_file):
+        os.remove(lrc_file)
+    if vocals_file and os.path.exists(vocals_file):
+        os.remove(vocals_file)
+    if instrumental_file and os.path.exists(instrumental_file):
+        os.remove(instrumental_file)
+    if os.path.exists(audio_filename):
+        os.remove(audio_filename)
 
     logging.info("Finished get_song_details")
+    await log_download(spotify_name, spotify_artist)
     return {
         "video_file": video_filename
     }
