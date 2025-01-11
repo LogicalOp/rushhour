@@ -1,20 +1,24 @@
 import * as React from 'react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   Grid, 
   Paper, 
   Box, 
-  Button, 
-  Typography, 
-  TextField, 
-  Backdrop, 
-  Dialog, 
+  Typography,
+  List,
+  ListItem,
+  ListItemText,
+  Backdrop,
+  Dialog,
+  Button,
   IconButton,
   CircularProgress
 } from '@mui/material';
+
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import CloseIcon from '@mui/icons-material/Close';
 import DownloadIcon from '@mui/icons-material/Download';
+
 import { styled } from '@mui/material/styles';
 import waveform from '../utils/waveform.gif';
 import { useVideoFetch } from '../utils/useVideoFetch';
@@ -26,12 +30,15 @@ const Item = styled(Paper)(({ theme }) => ({
   lineHeight: '60px',
 }));
 
-export default function FileUpload() {
-  // variables for the input form
-  const [songName, setSongName] = useState('');
-  const [artistName, setArtistName] = useState('');
+export default function ChartsList() {
+  // declaring variables 
+  const [chartData, setChartData] = useState({});
+  const [sortedCharts, setSortedCharts] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [selectedSong, setSelectedSong] = useState(null);
 
-  // using the useVideoFetch hook in the utils folder
+  // using the useVideoFetch hook from utils folder
   const {
     videoLoading, 
     uploadComplete, 
@@ -41,18 +48,64 @@ export default function FileUpload() {
     handleCloseModal
   } = useVideoFetch();
 
-  // handler for form submission
-  const submitRequest = async () => {
+  //hook for fetching chart data
+  useEffect(() => {
+    const fetchChartData = async () => {
+      try {
+        const response = await fetch('https://2a0a-188-141-96-109.ngrok-free.app/chart', {
+          headers: {
+            'ngrok-skip-browser-warning': 'true'
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const text = await response.text();
+        let data;
+        try {
+          data = JSON.parse(text);
+        } catch (parseError) {
+          console.error('Parsing error:', text);
+          throw new Error('Failed to parse JSON: ' + text);
+        }
+        
+        // sort and limit chart data to top 50 songs
+        const sorted = Object.entries(data)
+          .sort(([, a], [, b]) => b - a)
+          .slice(0, 50)
+          .map(([song, downloads]) => ({ song, downloads }));
+        
+        setChartData(data);
+        setSortedCharts(sorted);
+        setIsLoading(false);
+      } catch (error) {
+        console.error('Error fetching chart data:', error);
+        setError(error.message);
+        setIsLoading(false);
+      }
+    };
+
+    fetchChartData();
+  }, []);
+
+  // handler for generating video for selected song
+  const generateVideo = async (song) => {
+    const [songName, artistName] = song.split(' - ');
+    setSelectedSong(song);
     await fetchVideoForSong(songName, artistName);
   };
 
+  // handler for downloading the generated video
   const onDownload = () => {
+    const [songName, artistName] = selectedSong.split(' - ');
     handleDownload(songName, artistName);
   };
 
   return (
     <>
-      {/*grid container for the upload form */}
+      {/* grid container for the charts list */}
       <Grid
         container
         spacing={2}
@@ -85,15 +138,15 @@ export default function FileUpload() {
                 animation: 'gradient 15s ease infinite',
                 '@keyframes gradient': {
                   '0%': {
-                    backgroundPosition: '0% 50%',
+                    backgroundPosition: '0% 50%'
                   },
                   '50%': {
-                    backgroundPosition: '100% 50%',
+                    backgroundPosition: '100% 50%'
                   },
                   '100%': {
-                    backgroundPosition: '0% 50%',
-                  },
-                },
+                    backgroundPosition: '0% 50%'
+                  }
+                }
               }}
             />
             {/* waveform gif */}
@@ -111,7 +164,7 @@ export default function FileUpload() {
                 opacity: 0.4,
               }}
             />
-            {/* form container */}
+            {/* charts list container */}
             <Box
               sx={{
                 position: 'relative',
@@ -119,59 +172,58 @@ export default function FileUpload() {
                 height: '100%',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'flex-start',
-                paddingLeft: '4rem',
+                justifyContent: 'center',
+                width: '100%'
               }}
             >
-              {/* input form */}
+              {/* charts list paper component */}
               <Item
                 elevation={6}
                 sx={{
-                  textAlign: 'center',
-                  width: '25%',
-                  height: '75%',
+                  width: '80%',
+                  height: '85%',
                   backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  padding: '2rem',
-                  gap: '1.5rem',
+                  overflowY: 'auto',
+                  padding: '1.5rem',
                 }}
               >
-                <Typography variant="h6" component="div" color="secondary">
-                  Enter Song Details
+                <Typography variant="h4" color="secondary" sx={{ textAlign: 'center', mb: 3 }}>
+                  Most Downloaded Songs
                 </Typography>
-                {/* song title textfield */}
-                <TextField
-                  fullWidth
-                  label="Song Title"
-                  variant="outlined"
-                  size="small"
-                  value={songName}
-                  onChange={(e) => setSongName(e.target.value)}
-                />
-                {/* artist textfield */}
-                <TextField
-                  fullWidth
-                  label="Artist"
-                  variant="outlined"
-                  size="small"
-                  value={artistName}
-                  onChange={(e) => setArtistName(e.target.value)}
-                />
-                <Box sx={{ flexGrow: 1 }} />
-                {/* submit button */}
-                <Button
-                  sx={{
-                    bgcolor: 'orange',
-                    '&:hover': {
-                      bgcolor: '#e69500',
-                    },
-                  }}
-                  variant="contained"
-                  onClick={submitRequest}
-                >
-                  Submit
-                </Button>
+                {/* conditional rendering */}
+                {isLoading ? (
+                  <Typography variant="body2" sx={{ textAlign: 'center' }}>
+                    Loading charts...
+                  </Typography>
+                ) : error ? (
+                  <Typography variant="body2" color="error" sx={{ textAlign: 'center' }}>
+                    Error loading charts: {error}
+                  </Typography>
+                ) : (
+                  <List>
+                    {/* charts list where clicking generates a video*/}
+                    {sortedCharts.map((item, index) => (
+                      <ListItem 
+                        key={item.song} 
+                        divider 
+                        button 
+                        onClick={() => generateVideo(item.song)}
+                        sx={{ 
+                          cursor: 'pointer',
+                          '&:hover': { 
+                            backgroundColor: 'rgba(0,0,0,0.1)' 
+                          }
+                        }}
+                      >
+                        {/*song info text*/}
+                        <ListItemText
+                          primary={`${index + 1}. ${item.song}`}
+                          secondary={`Downloads: ${item.downloads}`}
+                        />
+                      </ListItem>
+                    ))}
+                  </List>
+                )}
               </Item>
             </Box>
           </Box>
@@ -189,14 +241,20 @@ export default function FileUpload() {
       {/* success dialog */}
       <Dialog
         open={uploadComplete}
-        onClose={handleCloseModal}
+        onClose={() => {
+          handleCloseModal();
+          setSelectedSong(null);
+        }}
         aria-labelledby="upload-complete-title"
       >
         <Box sx={{ textAlign: 'center', padding: 3 }}>
           {/* close button */}
           <IconButton
             aria-label="close"
-            onClick={handleCloseModal}
+            onClick={() => {
+              handleCloseModal();
+              setSelectedSong(null);
+            }}
             sx={{ position: 'absolute', top: 8, right: 8 }}
           >
             <CloseIcon />
@@ -208,7 +266,7 @@ export default function FileUpload() {
           </Typography>
           {/* download button */}
           <Button
-            onClick={onDownload}  
+            onClick={onDownload}
             variant="contained"
             startIcon={<DownloadIcon />}
           >

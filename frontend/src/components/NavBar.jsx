@@ -8,88 +8,78 @@ import Typography from '@mui/material/Typography';
 import Menu from '@mui/material/Menu';
 import MenuIcon from '@mui/icons-material/Menu';
 import Container from '@mui/material/Container';
-import Avatar from '@mui/material/Avatar';
 import Button from '@mui/material/Button';
-import Tooltip from '@mui/material/Tooltip';
 import MenuItem from '@mui/material/MenuItem';
-import AdbIcon from '@mui/icons-material/Adb';
-import Home from '../pages/Home';
 import MicIcon from '@mui/icons-material/Mic';
+import Home from '../pages/Home';
+import Charts from '../pages/Charts';
 
+// declaring the pages, with their labels and paths
 const pages = [
   { label: 'Home', path: '/' },
-  {label: 'My Songs', path: '/mysongs'}
+  { label: 'Charts', path: '/charts' }
 ];
-const settings = ['Profile'];
 
+// common styles for reuse
+const commonStyles = {
+  link: {
+    textDecoration: 'none',
+    color: 'inherit'
+  },
+  typography: {
+    fontFamily: 'monospace',
+    fontWeight: 700,
+    letterSpacing: '.3rem',
+    color: 'inherit',
+    textDecoration: 'none',
+  },
+  gradient: {
+    background: 'linear-gradient(-225deg, #231557 0%, #44107A 29%, #FF1361 67%, #FFF800 100%)', // the background which changes colour
+    backgroundSize: '200% 100%',
+    animation: 'gradient 15s ease infinite', // animation to make the background change colour
+    '@keyframes gradient': {
+      '0%': { backgroundPosition: '0% 50%' },
+      '50%': { backgroundPosition: '100% 50%' },
+      '100%': { backgroundPosition: '0% 50%' }
+    }
+  }
+};
+
+// the navbar function
 function NavBar() {
+  // state for mobile menu
   const [anchorElNav, setAnchorElNav] = React.useState(null);
-  const [anchorElUser, setAnchorElUser] = React.useState(null);
 
-  const handleOpenNavMenu = (event) => {
-    setAnchorElNav(event.currentTarget);
-  };
-  const handleOpenUserMenu = (event) => {
-    setAnchorElUser(event.currentTarget);
-  };
-
-  const handleCloseNavMenu = () => {
-    setAnchorElNav(null);
-  };
-
-  const handleCloseUserMenu = () => {
-    setAnchorElUser(null);
-  };
+  // handling open and closing of the nav menu
+  const handleOpenNavMenu = (event) => setAnchorElNav(event.currentTarget);
+  const handleCloseNavMenu = () => setAnchorElNav(null);
 
   return (
+    // wrapping the component in router to enable routing
     <Router>
-      <AppBar 
-        position="static" 
-        sx={{
-          background: 'linear-gradient(-225deg, #231557 0%, #44107A 29%, #FF1361 67%, #FFF800 100%)',
-          backgroundSize: '200% 100%',
-          animation: 'gradient 15s ease infinite',
-          '@keyframes gradient': {
-            '0%': {
-              backgroundPosition: '0% 50%'
-            },
-            '50%': {
-              backgroundPosition: '100% 50%'
-            },
-            '100%': {
-              backgroundPosition: '0% 50%'
-            }
-          }
-        }}
-      >
+      {/* appbar component to create the top navigation bar */}
+      <AppBar position="static" sx={commonStyles.gradient}>
         <Container maxWidth="xl">
           <Toolbar disableGutters>
+            {/* the mic logo seen in the navbar*/}
             <MicIcon sx={{ display: { xs: 'none', md: 'flex' }, mr: 1 }} />
             
+            {/* 'karaoke bar' text that links to the homepage */}
             <Typography
               variant="h6"
               noWrap
               component={Link}
               to="/"
-              sx={{
-                mr: 2,
-                display: { xs: 'none', md: 'flex' },
-                fontFamily: 'monospace',
-                fontWeight: 700,
-                letterSpacing: '.3rem',
-                color: 'inherit',
-                textDecoration: 'none',
-              }}
+              sx={{ ...commonStyles.typography, mr: 2, display: { xs: 'none', md: 'flex' } }}
             >
               Karaoke Bar
             </Typography>
 
+            {/* mobile menu section */}
             <Box sx={{ flexGrow: 1, display: { xs: 'flex', md: 'none' } }}>
               <IconButton
                 size="large"
-                aria-label="account of current user"
-                aria-controls="menu-appbar"
-                aria-haspopup="true"
+                aria-label="mobile menu"
                 onClick={handleOpenNavMenu}
                 color="inherit"
               >
@@ -98,23 +88,17 @@ function NavBar() {
               <Menu
                 id="menu-appbar"
                 anchorEl={anchorElNav}
-                anchorOrigin={{
-                  vertical: 'bottom',
-                  horizontal: 'left',
-                }}
-                keepMounted
-                transformOrigin={{
-                  vertical: 'top',
-                  horizontal: 'left',
-                }}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+                transformOrigin={{ vertical: 'top', horizontal: 'left' }}
                 open={Boolean(anchorElNav)}
                 onClose={handleCloseNavMenu}
                 sx={{ display: { xs: 'block', md: 'none' } }}
               >
+                {/* mobile menu items */}
                 {pages.map((page) => (
                   <MenuItem key={page.label} onClick={handleCloseNavMenu}>
                     <Typography textAlign="center">
-                      <Link to={page.path} style={{ textDecoration: 'none', color: 'inherit' }}>
+                      <Link to={page.path} style={commonStyles.link}>
                         {page.label}
                       </Link>
                     </Typography>
@@ -123,25 +107,20 @@ function NavBar() {
               </Menu>
             </Box>
 
+            {/* mobile mic logo */}
+            <MicIcon sx={{ display: { xs: 'flex', md: 'none' }, mr: 1 }} />
+            {/* mobile 'karaoke bar' text */}
             <Typography
               variant="h5"
               noWrap
               component={Link}
               to="/"
-              sx={{
-                mr: 2,
-                display: { xs: 'flex', md: 'none' },
-                flexGrow: 1,
-                fontFamily: 'monospace',
-                fontWeight: 700,
-                letterSpacing: '.3rem',
-                color: 'inherit',
-                textDecoration: 'none',
-              }}
+              sx={{ ...commonStyles.typography, mr: 2, display: { xs: 'flex', md: 'none' }, flexGrow: 1 }}
             >
               Karaoke Bar
             </Typography>
 
+            {/* desktop menu section */}
             <Box sx={{ flexGrow: 1, display: { xs: 'none', md: 'flex' } }}>
               {pages.map((page) => (
                 <Button
@@ -149,48 +128,19 @@ function NavBar() {
                   onClick={handleCloseNavMenu}
                   sx={{ my: 2, color: 'white', display: 'block' }}
                 >
-                  <Link to={page.path} style={{ textDecoration: 'none', color: 'inherit' }}>
+                  <Link to={page.path} style={commonStyles.link}>
                     {page.label}
                   </Link>
                 </Button>
               ))}
             </Box>
-
-            <Box sx={{ flexGrow: 0 }}>
-              <Tooltip title="Open settings">
-                <IconButton onClick={handleOpenUserMenu} sx={{ p: 0 }}>
-                  <Avatar alt="Remy Sharp" src="/static/images/avatar/2.jpg" />
-                </IconButton>
-              </Tooltip>
-              <Menu
-                sx={{ mt: '45px' }}
-                id="menu-appbar"
-                anchorEl={anchorElUser}
-                anchorOrigin={{
-                  vertical: 'top',
-                  horizontal: 'right',
-                }}
-                keepMounted
-                transformOrigin={{
-                  vertical: 'top',
-                  horizontal: 'right',
-                }}
-                open={Boolean(anchorElUser)}
-                onClose={handleCloseUserMenu}
-              >
-                {settings.map((setting) => (
-                  <MenuItem key={setting} onClick={handleCloseUserMenu}>
-                    <Typography textAlign="center">{setting}</Typography>
-                  </MenuItem>
-                ))}
-              </Menu>
-            </Box>
           </Toolbar>
         </Container>
       </AppBar>
 
-      <Routes>
+      {/* route definitions for page navigation */}      <Routes>
         <Route path="/" element={<Home />} />
+        <Route path="/charts" element={<Charts />} />
       </Routes>
     </Router>
   );

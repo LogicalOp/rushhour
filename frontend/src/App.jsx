@@ -1,5 +1,6 @@
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import NavBar from './components/NavBar';
+// declaring the style sheet generated on https://zenoo.github.io/mui-theme-creator/
 const style = createTheme({
   palette: {
     mode: 'light',
@@ -23,10 +24,12 @@ const style = createTheme({
   },
 });
 
-
+//main the app function
 function App() {
   return (
+    //wrapping it in our theme
     <ThemeProvider theme={style}>
+      {/*declaring the nav bar which handles the routing */}
           <NavBar />  
     </ThemeProvider>
    

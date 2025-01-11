@@ -1,9 +1,9 @@
 import FileUpload from '../components/FileUpload';
-import {Paper} from '@mui/material';
+//home page component
 const Home = () => {
     return ( 
         <div className="home">
-            
+            {/* adding the file upload, which is the only component used on this page*/}
             <FileUpload/>
             
             
