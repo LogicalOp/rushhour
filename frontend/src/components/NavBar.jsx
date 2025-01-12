@@ -63,7 +63,6 @@ function NavBar() {
           <Toolbar disableGutters>
             {/* the mic logo seen in the navbar*/}
             <MicIcon sx={{ display: { xs: 'none', md: 'flex' }, mr: 1 }} />
-            
             {/* 'karaoke bar' text that links to the homepage */}
             <Typography
               variant="h6"
@@ -74,7 +73,6 @@ function NavBar() {
             >
               Karaoke Bar
             </Typography>
-
             {/* mobile menu section */}
             <Box sx={{ flexGrow: 1, display: { xs: 'flex', md: 'none' } }}>
               <IconButton
@@ -106,7 +104,6 @@ function NavBar() {
                 ))}
               </Menu>
             </Box>
-
             {/* mobile mic logo */}
             <MicIcon sx={{ display: { xs: 'flex', md: 'none' }, mr: 1 }} />
             {/* mobile 'karaoke bar' text */}
@@ -119,7 +116,6 @@ function NavBar() {
             >
               Karaoke Bar
             </Typography>
-
             {/* desktop menu section */}
             <Box sx={{ flexGrow: 1, display: { xs: 'none', md: 'flex' } }}>
               {pages.map((page) => (
@@ -137,8 +133,7 @@ function NavBar() {
           </Toolbar>
         </Container>
       </AppBar>
-
-      {/* route definitions for page navigation */}      <Routes>
+      <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/charts" element={<Charts />} />
       </Routes>

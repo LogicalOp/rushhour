@@ -7,6 +7,17 @@ from demucs.apply import apply_model
 from pathlib import Path
 
 async def separate_and_save(input_file: str, output_prefix: str):
+    """
+    Asynchronously separates an audio file into vocals and instrumental components and saves them to specified output paths.
+    Args:
+        input_file (str): Path to the input audio file.
+        output_prefix (str): Prefix for the output files. The function will save the vocals to "{output_prefix}_vocals.wav" 
+                             and the instrumental to "{output_prefix}_instrumental.wav".
+    Returns:
+        tuple: A tuple containing the paths to the saved vocals and instrumental files.
+    Raises:
+        HTTPException: If the input file does not exist or if there is an error during audio loading or model application.
+    """
     logging.info("Starting separate_and_save")
     
     input_file_path = Path(input_file)

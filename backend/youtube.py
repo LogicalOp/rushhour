@@ -4,6 +4,22 @@ import os
 import time
 
 async def find_youtube_match(song_name: str, artist_name: str, target_duration: int):
+    """
+    Find the best matching YouTube video for a given song and artist.
+    This function searches YouTube for videos matching the provided song name and artist name,
+    and returns the video that best matches the target duration. It uses cookies for authentication
+    and age restriction purposes.
+    Args:
+        song_name (str): The name of the song to search for.
+        artist_name (str): The name of the artist to search for.
+        target_duration (int): The target duration of the video in seconds.
+    Returns:
+        dict: A dictionary containing information about the best matching video, or None if no match is found.
+    Raises:
+        FileNotFoundError: If the cookies file does not exist.
+    Note:
+        This function requires the `yt_dlp` library and a valid `cookies.txt` file for YouTube authentication.
+    """
     start_time = time.time()
     query = f"{song_name} {artist_name}"
     cookies_file = 'cookies.txt'
@@ -46,6 +62,20 @@ async def find_youtube_match(song_name: str, artist_name: str, target_duration: 
     return best_match
 
 async def download_audio(video_url: str, title: str, artist: str):
+    """
+    Downloads the audio from a YouTube video and saves it as an MP3 file.
+    Args:
+        video_url (str): The URL of the YouTube video to download.
+        title (str): The title to use for the downloaded audio file.
+        artist (str): The artist name to use for the downloaded audio file.
+    Returns:
+        None
+    Notes:
+        - The function requires a cookies file named 'cookies.txt' to be present in the working directory.
+        - The downloaded audio file will be saved in the 'downloads' directory with the format '{title} - {artist}.mp3'.
+        - The function uses yt-dlp to download and process the audio.
+        - The function sets an age limit of 17 for the content to be downloaded.
+    """
     cookies_file = 'cookies.txt'
     
     # Check if the cookies file exists

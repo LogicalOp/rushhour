@@ -1,9 +1,9 @@
 import * as React from 'react';
 import { useState, useEffect } from 'react';
-import { 
-  Grid, 
-  Paper, 
-  Box, 
+import {
+  Grid,
+  Paper,
+  Box,
   Typography,
   List,
   ListItem,
@@ -40,11 +40,11 @@ export default function ChartsList() {
 
   // using the useVideoFetch hook from utils folder
   const {
-    videoLoading, 
-    uploadComplete, 
-    videoUrl, 
-    fetchVideoForSong, 
-    handleDownload, 
+    videoLoading,
+    uploadComplete,
+    videoUrl,
+    fetchVideoForSong,
+    handleDownload,
     handleCloseModal
   } = useVideoFetch();
 
@@ -61,7 +61,7 @@ export default function ChartsList() {
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
-        
+
         const text = await response.text();
         let data;
         try {
@@ -70,13 +70,13 @@ export default function ChartsList() {
           console.error('Parsing error:', text);
           throw new Error('Failed to parse JSON: ' + text);
         }
-        
+
         // sort and limit chart data to top 50 songs
         const sorted = Object.entries(data)
           .sort(([, a], [, b]) => b - a)
           .slice(0, 50)
           .map(([song, downloads]) => ({ song, downloads }));
-        
+
         setChartData(data);
         setSortedCharts(sorted);
         setIsLoading(false);
@@ -203,15 +203,15 @@ export default function ChartsList() {
                   <List>
                     {/* charts list where clicking generates a video*/}
                     {sortedCharts.map((item, index) => (
-                      <ListItem 
-                        key={item.song} 
-                        divider 
-                        button 
+                      <ListItem
+                        key={item.song}
+                        divider
+                        button
                         onClick={() => generateVideo(item.song)}
-                        sx={{ 
+                        sx={{
                           cursor: 'pointer',
-                          '&:hover': { 
-                            backgroundColor: 'rgba(0,0,0,0.1)' 
+                          '&:hover': {
+                            backgroundColor: 'rgba(0,0,0,0.1)'
                           }
                         }}
                       >
@@ -274,21 +274,21 @@ export default function ChartsList() {
           </Button>
           {/* video preview */}
           {videoUrl && (
-            <Box 
-              sx={{ 
-                mt: 2, 
-                width: '100%', 
-                display: 'flex', 
-                justifyContent: 'center', 
-                alignItems: 'center' 
+            <Box
+              sx={{
+                mt: 2,
+                width: '100%',
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center'
               }}
             >
-              <video 
-                controls 
-                style={{ 
-                  maxWidth: '300px', 
-                  maxHeight: '250px', 
-                  objectFit: 'contain' 
+              <video
+                controls
+                style={{
+                  maxWidth: '300px',
+                  maxHeight: '250px',
+                  objectFit: 'contain'
                 }}
               >
                 <source src={videoUrl} type="video/mp4" />
