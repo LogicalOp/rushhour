@@ -7,9 +7,21 @@ import time
 import os
 import subprocess
 
-
-
 async def parse_lrc(path):
+    """
+    Parses an LRC file and extracts the lyrics with their corresponding timestamps.
+    Args:
+        path (str): The file path to the LRC file.
+    Returns:
+        list of tuple: A list of tuples where each tuple contains a timestamp (float) and a lyric (str).
+    Raises:
+        FileNotFoundError: If the file at the specified path does not exist.
+        UnicodeDecodeError: If the file cannot be decoded using 'utf-8' encoding.
+    Example:
+        >>> lyrics = await parse_lrc('/path/to/file.lrc')
+        >>> print(lyrics)
+        [(12.34, 'Some lyric'), (56.78, 'Another lyric')]
+    """
     logging.info(f"Reading LRC file: {path}")
     with open(path, 'r', encoding='utf-8') as file:
         content = file.read()
@@ -35,6 +47,14 @@ async def parse_lrc(path):
     return lyrics
 
 async def create_image(lyric, font):
+    """
+    Create an image with a gradient background and centered text.
+    Args:
+        lyric (str): The text to be displayed on the image.
+        font (PIL.ImageFont.FreeTypeFont): The font to be used for the text.
+    Returns:
+        np.ndarray: The generated image as a NumPy array.
+    """
 
     width, height = 1280, 720
     img = Image.new('RGB', (width, height))
@@ -93,6 +113,19 @@ async def create_image(lyric, font):
     return np.array(img)
 
 async def create_video(lrc_file, instrumental_file_path, output_file, wait_time=1):
+    """
+    Creates a video with lyrics displayed in sync with an instrumental audio track.
+    Args:
+        lrc_file (str): Path to the .lrc file containing the lyrics and timestamps.
+        instrumental_file_path (str): Path to the instrumental audio file.
+        output_file (str): Path where the final video file will be saved.
+        wait_time (int, optional): Time in seconds to wait before checking for the instrumental file if it doesn't exist. Defaults to 1.
+    Returns:
+        None
+    Raises:
+        subprocess.CalledProcessError: If the ffmpeg command fails.
+        IOError: If the font file cannot be loaded.
+    """
     logging.info("Starting create_video_with_lyrics_and_instrumental")
     lyrics = await parse_lrc(lrc_file)  
     logging.info(f"Parsed {len(lyrics)} lines of lyrics")

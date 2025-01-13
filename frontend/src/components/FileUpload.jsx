@@ -1,14 +1,14 @@
 import * as React from 'react';
 import { useState } from 'react';
-import { 
-  Grid, 
-  Paper, 
-  Box, 
-  Button, 
-  Typography, 
-  TextField, 
-  Backdrop, 
-  Dialog, 
+import {
+  Grid,
+  Paper,
+  Box,
+  Button,
+  Typography,
+  TextField,
+  Backdrop,
+  Dialog,
   IconButton,
   CircularProgress
 } from '@mui/material';
@@ -33,11 +33,11 @@ export default function FileUpload() {
 
   // using the useVideoFetch hook in the utils folder
   const {
-    videoLoading, 
-    uploadComplete, 
-    videoUrl, 
-    fetchVideoForSong, 
-    handleDownload, 
+    videoLoading,
+    uploadComplete,
+    videoUrl,
+    fetchVideoForSong,
+    handleDownload,
     handleCloseModal
   } = useVideoFetch();
 
@@ -208,7 +208,7 @@ export default function FileUpload() {
           </Typography>
           {/* download button */}
           <Button
-            onClick={onDownload}  
+            onClick={onDownload}
             variant="contained"
             startIcon={<DownloadIcon />}
           >
@@ -216,21 +216,21 @@ export default function FileUpload() {
           </Button>
           {/* video preview */}
           {videoUrl && (
-            <Box 
-              sx={{ 
-                mt: 2, 
-                width: '100%', 
-                display: 'flex', 
-                justifyContent: 'center', 
-                alignItems: 'center' 
+            <Box
+              sx={{
+                mt: 2,
+                width: '100%',
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center'
               }}
             >
-              <video 
-                controls 
-                style={{ 
-                  maxWidth: '300px', 
-                  maxHeight: '250px', 
-                  objectFit: 'contain' 
+              <video
+                controls
+                style={{
+                  maxWidth: '300px',
+                  maxHeight: '250px',
+                  objectFit: 'contain'
                 }}
               >
                 <source src={videoUrl} type="video/mp4" />

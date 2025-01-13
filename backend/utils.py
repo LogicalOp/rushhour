@@ -15,6 +15,16 @@ import asyncio
 logging.basicConfig(level=logging.INFO)
 
 async def delete_old_videos(directory: str, age_minutes: int):
+    """
+    Asynchronously deletes video files in the specified directory that are older than a given age in minutes.
+    Args:
+        directory (str): The path to the directory containing the video files.
+        age_minutes (int): The age threshold in minutes. Files older than this will be deleted.
+    Returns:
+        None
+    Raises:
+        OSError: If an error occurs while accessing the directory or deleting files.
+    """
     now = datetime.now()
     cutoff = now - timedelta(minutes=age_minutes)
 
@@ -27,11 +37,31 @@ async def delete_old_videos(directory: str, age_minutes: int):
                 os.remove(file_path)
 
 async def log_download(song_name: str, artist_name: str):
+    """
+    Logs the download of a song by appending the song name and artist name to a CSV file.
+
+    Args:
+        song_name (str): The name of the song being downloaded.
+        artist_name (str): The name of the artist of the song.
+
+    Raises:
+        OSError: If the file cannot be opened or written to.
+    """
     async with aiofiles.open('download_counts.csv', mode='a', newline='') as file:
         writer = csv.writer(file)
         await writer.writerow([song_name, artist_name])
 
 async def get_download_counts():
+    """
+    Asynchronously retrieves download counts from a CSV file.
+    Reads the 'download_counts.csv' file and counts the number of downloads for each song.
+    The CSV file is expected to have two columns: song_name and artist_name.
+    Returns:
+        dict: A dictionary where the keys are in the format "song_name - artist_name"
+              and the values are the download counts.
+    Raises:
+        FileNotFoundError: If the 'download_counts.csv' file does not exist.
+    """
     download_counts = {}
     if not os.path.exists('download_counts.csv'):
         return download_counts
@@ -50,6 +80,22 @@ async def get_download_counts():
     return download_counts
 
 async def get_song_details(song_name: str, artist_name: str):
+    """
+    Asynchronously retrieves song details, downloads audio, fetches lyrics, creates a video, and handles file management.
+    Args:
+        song_name (str): The name of the song to retrieve details for.
+        artist_name (str): The name of the artist of the song.
+    Returns:
+        dict: A dictionary containing the path to the created video file or an error message.
+    Raises:
+        Exception: If an error occurs during video creation or audio separation.
+    Logs:
+        Various stages of the process including starting, errors, and completion.
+    File Management:
+        Creates necessary directories if they do not exist.
+        Deletes old videos from the 'videos' directory.
+        Deletes intermediate files after processing.
+    """
     logging.info("Starting get_song_details")
     
     if not os.path.exists('downloads'):

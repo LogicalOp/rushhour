@@ -30,9 +30,8 @@ function App() {
     //wrapping it in our theme
     <ThemeProvider theme={style}>
       {/*declaring the nav bar which handles the routing */}
-          <NavBar />  
+      <NavBar />
     </ThemeProvider>
-   
   );
 }
 

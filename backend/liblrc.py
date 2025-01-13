@@ -5,6 +5,16 @@ import os
 root_url = 'https://lrclib.net/api/'
 
 async def get_lyrics(track_name: str, artist_name: str, album_name: Optional[str] = None, duration: Optional[int] = None) -> Optional[str]:
+    """
+    Fetches lyrics for a given track and saves them to a file if they do not already exist.
+    Args:
+        track_name (str): The name of the track.
+        artist_name (str): The name of the artist.
+        album_name (Optional[str], optional): The name of the album. Defaults to None.
+        duration (Optional[int], optional): The duration of the track in seconds. Defaults to None.
+    Returns:
+        Optional[str]: The lyrics of the track if successfully fetched, otherwise None.
+    """
 
     if not os.path.exists('lrc'):
         os.makedirs('lrc')
